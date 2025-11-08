@@ -7,7 +7,13 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { MedicalLoader } from "@/components/ui/medical-loader";
 import { useRole } from "@/lib/useRole";
 import { ROLES } from "@/lib/roles";
@@ -28,14 +34,17 @@ function CreateRecordForm() {
   const [supplyInput, setSupplyInput] = useState("");
   const [quantityInput, setQuantityInput] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-  const [saveStatus, setSaveStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [saveStatus, setSaveStatus] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
   const [showDebug, setShowDebug] = useState(false);
 
   const createRecord = useMutation(api.reports.createDiseaseRecord);
   const userRole = useRole();
   const convexRoleCheck = useQuery(api.reports.checkUserRole);
   const { signOut } = useClerk();
-  
+
   const handleSetRole = async () => {
     try {
       const response = await fetch("/api/set-role", {
@@ -45,15 +54,23 @@ function CreateRecordForm() {
       });
       const data = await response.json();
       if (data.ok) {
-        setSaveStatus({ 
-          type: "success", 
-          message: "Role set successfully! IMPORTANT: Please sign out and sign back in to refresh your session token, then try creating a record again." 
+        setSaveStatus({
+          type: "success",
+          message:
+            "Role set successfully! IMPORTANT: Please sign out and sign back in to refresh your session token, then try creating a record again.",
         });
       } else {
-        setSaveStatus({ type: "error", message: data.error || "Failed to set role" });
+        setSaveStatus({
+          type: "error",
+          message: data.error || "Failed to set role",
+        });
       }
     } catch (error) {
-      setSaveStatus({ type: "error", message: "Failed to set role. Please try visiting /after-signin?role=asha&invite=ASHA2025" });
+      setSaveStatus({
+        type: "error",
+        message:
+          "Failed to set role. Please try visiting /after-signin?role=asha&invite=ASHA2025",
+      });
     }
   };
 
@@ -73,15 +90,24 @@ function CreateRecordForm() {
     if (supplyInput.trim() && quantityInput.trim()) {
       const quantity = parseInt(quantityInput);
       if (isNaN(quantity) || quantity <= 0) {
-        setSaveStatus({ type: "error", message: "Please enter a valid quantity (greater than 0)" });
+        setSaveStatus({
+          type: "error",
+          message: "Please enter a valid quantity (greater than 0)",
+        });
         return;
       }
-      setMedicalSupplies([...medicalSupplies, { name: supplyInput.trim(), quantity }]);
+      setMedicalSupplies([
+        ...medicalSupplies,
+        { name: supplyInput.trim(), quantity },
+      ]);
       setSupplyInput("");
       setQuantityInput("");
       setSaveStatus(null);
     } else {
-      setSaveStatus({ type: "error", message: "Please enter both supply name and quantity" });
+      setSaveStatus({
+        type: "error",
+        message: "Please enter both supply name and quantity",
+      });
     }
   };
 
@@ -131,14 +157,19 @@ function CreateRecordForm() {
       setMedicalSupplies([]);
       setSupplyInput("");
       setQuantityInput("");
-      setSaveStatus({ type: "success", message: "Record saved successfully! Check the Saved/Edit tab to view it." });
+      setSaveStatus({
+        type: "success",
+        message:
+          "Record saved successfully! Check the Saved/Edit tab to view it.",
+      });
       // Clear success message after 5 seconds
       setTimeout(() => setSaveStatus(null), 5000);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Failed to save record";
-      setSaveStatus({ 
-        type: "error", 
-        message: errorMessage
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to save record";
+      setSaveStatus({
+        type: "error",
+        message: errorMessage,
       });
       console.error("Error creating record:", error);
     } finally {
@@ -168,11 +199,21 @@ function CreateRecordForm() {
         <div className="p-4 bg-blue-50 border border-blue-200 rounded-md text-xs">
           <p className="font-semibold mb-2">🔍 Debug Information:</p>
           <div className="space-y-1">
-            <p><strong>Client-side role (from Clerk):</strong> {userRole}</p>
-            <p><strong>Convex sees role:</strong> {convexRoleCheck.role || "Unknown"}</p>
-            <p><strong>Convex has permission:</strong> {convexRoleCheck.hasPermission ? "✅ Yes" : "❌ No"}</p>
+            <p>
+              <strong>Client-side role (from Clerk):</strong> {userRole}
+            </p>
+            <p>
+              <strong>Convex sees role:</strong>{" "}
+              {convexRoleCheck.role || "Unknown"}
+            </p>
+            <p>
+              <strong>Convex has permission:</strong>{" "}
+              {convexRoleCheck.hasPermission ? "✅ Yes" : "❌ No"}
+            </p>
             <details className="mt-2">
-              <summary className="cursor-pointer font-medium">View Full Metadata</summary>
+              <summary className="cursor-pointer font-medium">
+                View Full Metadata
+              </summary>
               <pre className="mt-2 p-2 bg-white rounded text-xs overflow-auto max-h-40">
                 {JSON.stringify(convexRoleCheck, null, 2)}
               </pre>
@@ -180,7 +221,7 @@ function CreateRecordForm() {
           </div>
         </div>
       )}
-      
+
       {!hasPermission && (
         <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md">
           <p className="text-sm text-yellow-800 font-medium mb-2">
@@ -190,7 +231,9 @@ function CreateRecordForm() {
             Your current role is: <strong>"{userRole}"</strong>
           </p>
           <p className="text-sm text-yellow-700 mb-3">
-            To create disease records, you need to have the <strong>ASHA</strong> or <strong>Admin</strong> role set in your Clerk account.
+            To create disease records, you need to have the{" "}
+            <strong>ASHA</strong> or <strong>Admin</strong> role set in your
+            Clerk account.
           </p>
           <div className="text-sm text-yellow-700 space-y-2">
             <p className="font-medium">To set your role:</p>
@@ -205,7 +248,11 @@ function CreateRecordForm() {
             </Button>
             <div className="mt-2 p-2 bg-yellow-100 rounded text-xs space-y-2">
               <p className="font-semibold mb-1">⚠️ Important:</p>
-              <p>After setting your role, you <strong>must sign out and sign back in</strong> for the changes to take effect. The authentication token needs to be refreshed.</p>
+              <p>
+                After setting your role, you{" "}
+                <strong>must sign out and sign back in</strong> for the changes
+                to take effect. The authentication token needs to be refreshed.
+              </p>
               <Button
                 type="button"
                 onClick={() => {
@@ -225,11 +272,16 @@ function CreateRecordForm() {
           </div>
         </div>
       )}
-      
+
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Disease Name */}
         <div className="space-y-2">
-          <Label htmlFor="diseaseName">Disease Name *</Label>
+          <Label
+            htmlFor="diseaseName"
+            className="text-sm font-semibold text-gray-700"
+          >
+            Disease Name *
+          </Label>
           <Input
             id="diseaseName"
             type="text"
@@ -237,12 +289,18 @@ function CreateRecordForm() {
             onChange={(e) => setDiseaseName(e.target.value)}
             required
             placeholder="Enter disease name"
+            className="h-11 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
           />
         </div>
 
         {/* Image Upload */}
         <div className="space-y-2">
-          <Label htmlFor="image">Disease Image</Label>
+          <Label
+            htmlFor="image"
+            className="text-sm font-semibold text-gray-700"
+          >
+            Disease Image
+          </Label>
           <Input
             id="image"
             type="file"
@@ -275,7 +333,12 @@ function CreateRecordForm() {
 
         {/* Description */}
         <div className="space-y-2">
-          <Label htmlFor="description">Description *</Label>
+          <Label
+            htmlFor="description"
+            className="text-sm font-semibold text-gray-700"
+          >
+            Description *
+          </Label>
           <textarea
             id="description"
             value={description}
@@ -283,25 +346,36 @@ function CreateRecordForm() {
             required
             placeholder="Enter description about the disease"
             rows={4}
-            className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-base shadow-xs placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:border-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+            className="flex min-h-[80px] w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 text-base shadow-xs placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-blue-500/50 focus-visible:border-blue-500 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
           />
         </div>
 
         {/* Location */}
         <div className="space-y-2">
-          <Label htmlFor="location">Location</Label>
+          <Label
+            htmlFor="location"
+            className="text-sm font-semibold text-gray-700"
+          >
+            Patient Location
+          </Label>
           <Input
             id="location"
             type="text"
             value={location}
             onChange={(e) => setLocation(e.target.value)}
             placeholder="Enter location (e.g., Village, Street, Area)"
+            className="h-11 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
           />
         </div>
 
         {/* Medical Supplies */}
         <div className="space-y-2">
-          <Label htmlFor="supplies">Medical Supplies Needed</Label>
+          <Label
+            htmlFor="supplies"
+            className="text-sm font-semibold text-gray-700"
+          >
+            Medical Supplies Needed
+          </Label>
           <div className="flex gap-2">
             <Input
               id="supplies"
@@ -309,7 +383,7 @@ function CreateRecordForm() {
               value={supplyInput}
               onChange={(e) => setSupplyInput(e.target.value)}
               placeholder="Enter medical supply name"
-              className="flex-1"
+              className="flex-1 h-11 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault();
@@ -322,7 +396,7 @@ function CreateRecordForm() {
               value={quantityInput}
               onChange={(e) => setQuantityInput(e.target.value)}
               placeholder="Qty"
-              className="w-24"
+              className="w-24 h-11 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
               min="1"
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
@@ -335,20 +409,23 @@ function CreateRecordForm() {
               type="button"
               variant="outline"
               onClick={handleAddSupply}
+              className="h-11 border-gray-300 hover:bg-blue-50 hover:border-blue-500"
             >
               Add
             </Button>
           </div>
           {medicalSupplies.length > 0 && (
-            <div className="mt-2 space-y-2">
-              <Label>Added Supplies:</Label>
-              <ul className="space-y-1">
+            <div className="mt-3 space-y-2">
+              <Label className="text-sm font-semibold text-gray-700">
+                Added Supplies:
+              </Label>
+              <ul className="space-y-2">
                 {medicalSupplies.map((supply, index) => (
                   <li
                     key={index}
-                    className="flex items-center justify-between bg-gray-50 p-3 rounded-md"
+                    className="flex items-center justify-between bg-gradient-to-r from-blue-50 to-purple-50 p-3 rounded-lg border border-blue-200 shadow-sm"
                   >
-                    <span className="text-sm font-medium">
+                    <span className="text-sm font-medium text-gray-700">
                       {supply.name} - Quantity: {supply.quantity}
                     </span>
                     <Button
@@ -356,7 +433,7 @@ function CreateRecordForm() {
                       variant="ghost"
                       size="sm"
                       onClick={() => handleRemoveSupply(index)}
-                      className="text-red-600 hover:text-red-700"
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
                     >
                       Remove
                     </Button>
@@ -381,9 +458,18 @@ function CreateRecordForm() {
         )}
 
         {/* Submit Button */}
-        <Button type="submit" disabled={isSaving || !hasPermission} className="w-full">
-          {isSaving ? "Saving..." : "Save Record"}
-        </Button>
+        <div className="flex justify-center">
+          <Button
+            type="submit"
+            disabled={isSaving || !hasPermission}
+            className="w-36 h-10 text-sm font-semibold bg-gradient-to-r from-blue-600 to-purple-600 
+               hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-2xl hover:shadow-purple-500/50 
+               hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 
+               disabled:opacity-50 disabled:hover:scale-100 disabled:hover:shadow-lg rounded-md"
+          >
+            {isSaving ? "Saving..." : "Save Record ✅"}
+          </Button>
+        </div>
       </form>
     </div>
   );
@@ -392,32 +478,34 @@ function CreateRecordForm() {
 function SavedEditRecords() {
   const userRole = useRole();
   const { signOut } = useClerk();
-  const [serverVerifiedRole, setServerVerifiedRole] = useState<string | undefined>(undefined);
+  const [serverVerifiedRole, setServerVerifiedRole] = useState<
+    string | undefined
+  >(undefined);
   const [isVerifying, setIsVerifying] = useState(true);
-  
+
   // Verify role server-side first
   useEffect(() => {
     fetch("/api/verify-role")
-      .then(res => res.json())
-      .then(data => {
+      .then((res) => res.json())
+      .then((data) => {
         if (data.hasPermission) {
           setServerVerifiedRole(data.role);
           console.log("Server verified role for query:", data.role);
         }
         setIsVerifying(false);
       })
-      .catch(err => {
+      .catch((err) => {
         console.warn("Could not verify role:", err);
         setIsVerifying(false);
       });
   }, []);
-  
+
   // Pass server-verified role to query (skip query until we verify role)
   const records = useQuery(
     api.reports.getDiseaseRecords,
-    isVerifying ? "skip" : (serverVerifiedRole ? { serverVerifiedRole } : {})
+    isVerifying ? "skip" : serverVerifiedRole ? { serverVerifiedRole } : {}
   );
-  
+
   const updateRecord = useMutation(api.reports.updateDiseaseRecord);
   const registerRecord = useMutation(api.reports.registerDiseaseRecord);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -463,7 +551,10 @@ function SavedEditRecords() {
       }
       setEditForm({
         ...editForm,
-        medicalSupplies: [...editForm.medicalSupplies, { name: supplyInput.trim(), quantity }],
+        medicalSupplies: [
+          ...editForm.medicalSupplies,
+          { name: supplyInput.trim(), quantity },
+        ],
       });
       setSupplyInput("");
       setQuantityInput("");
@@ -550,7 +641,7 @@ function SavedEditRecords() {
         }
       }
 
-      await registerRecord({ 
+      await registerRecord({
         id: id as any,
         serverVerifiedRole: verifiedRole,
       });
@@ -558,7 +649,9 @@ function SavedEditRecords() {
       // Convex automatically refreshes queries after mutations
     } catch (error) {
       console.error("Failed to register record:", error);
-      alert(error instanceof Error ? error.message : "Failed to register record");
+      alert(
+        error instanceof Error ? error.message : "Failed to register record"
+      );
       setIsRegistering(null);
     } finally {
       setIsRegistering(null);
@@ -586,7 +679,8 @@ function SavedEditRecords() {
             Your current role is: <strong>"{userRole}"</strong>
           </p>
           <p className="text-sm text-yellow-700 mb-3">
-            It appears your session token hasn't been updated with your new role. Please sign out and sign back in to refresh your session.
+            It appears your session token hasn't been updated with your new
+            role. Please sign out and sign back in to refresh your session.
           </p>
           <Button
             onClick={() => {
@@ -603,13 +697,15 @@ function SavedEditRecords() {
     );
   }
 
-  const draftRecords = records.filter(r => r.status === "draft");
+  const draftRecords = records.filter((r) => r.status === "draft");
 
   if (draftRecords.length === 0) {
     return (
       <div className="space-y-4">
         <h3 className="text-lg font-semibold">Saved/Edit Records</h3>
-        <p className="text-muted-foreground">No saved records found. Create a new record in the Create tab.</p>
+        <p className="text-muted-foreground">
+          No saved records found. Create a new record in the Create tab.
+        </p>
       </div>
     );
   }
@@ -620,7 +716,7 @@ function SavedEditRecords() {
       <p className="text-muted-foreground">
         View, edit, or register your saved disease records.
       </p>
-      
+
       <div className="space-y-4">
         {draftRecords.map((record) => (
           <Card key={record._id}>
@@ -631,14 +727,23 @@ function SavedEditRecords() {
                     <Label>Disease Name *</Label>
                     <Input
                       value={editForm?.diseaseName || ""}
-                      onChange={(e) => setEditForm({ ...editForm!, diseaseName: e.target.value })}
+                      onChange={(e) =>
+                        setEditForm({
+                          ...editForm!,
+                          diseaseName: e.target.value,
+                        })
+                      }
                       required
                     />
                   </div>
 
                   <div className="space-y-2">
                     <Label>Image</Label>
-                    <Input type="file" accept="image/*" onChange={handleImageChange} />
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                    />
                     {imagePreview && (
                       <div className="mt-2">
                         <img
@@ -654,7 +759,12 @@ function SavedEditRecords() {
                     <Label>Description *</Label>
                     <textarea
                       value={editForm?.description || ""}
-                      onChange={(e) => setEditForm({ ...editForm!, description: e.target.value })}
+                      onChange={(e) =>
+                        setEditForm({
+                          ...editForm!,
+                          description: e.target.value,
+                        })
+                      }
                       required
                       rows={4}
                       className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-base shadow-xs placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:border-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
@@ -665,7 +775,9 @@ function SavedEditRecords() {
                     <Label>Location</Label>
                     <Input
                       value={editForm?.location || ""}
-                      onChange={(e) => setEditForm({ ...editForm!, location: e.target.value })}
+                      onChange={(e) =>
+                        setEditForm({ ...editForm!, location: e.target.value })
+                      }
                       placeholder="Enter location (e.g., Village, Street, Area)"
                     />
                   </div>
@@ -687,13 +799,22 @@ function SavedEditRecords() {
                         className="w-24"
                         min="1"
                       />
-                      <Button type="button" variant="outline" onClick={handleAddSupply}>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleAddSupply}
+                      >
                         Add
                       </Button>
                     </div>
                     {editForm?.medicalSupplies.map((supply, index) => (
-                      <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded-md">
-                        <span className="text-sm">{supply.name} - Quantity: {supply.quantity}</span>
+                      <div
+                        key={index}
+                        className="flex items-center justify-between bg-gray-50 p-2 rounded-md"
+                      >
+                        <span className="text-sm">
+                          {supply.name} - Quantity: {supply.quantity}
+                        </span>
                         <Button
                           type="button"
                           variant="ghost"
@@ -724,7 +845,8 @@ function SavedEditRecords() {
                     <div>
                       <CardTitle>{record.diseaseName}</CardTitle>
                       <CardDescription>
-                        Created: {new Date(record.createdAt).toLocaleDateString()}
+                        Created:{" "}
+                        {new Date(record.createdAt).toLocaleDateString()}
                       </CardDescription>
                     </div>
                     <div className="flex gap-2">
@@ -741,7 +863,9 @@ function SavedEditRecords() {
                         disabled={isRegistering === record._id}
                         variant="default"
                       >
-                        {isRegistering === record._id ? "Publishing..." : "Publish"}
+                        {isRegistering === record._id
+                          ? "Publishing..."
+                          : "Publish"}
                       </Button>
                     </div>
                   </div>
@@ -757,22 +881,31 @@ function SavedEditRecords() {
                   {record.location && (
                     <div className="mb-3">
                       <span className="text-sm font-medium">Location: </span>
-                      <span className="text-sm text-muted-foreground">{record.location}</span>
+                      <span className="text-sm text-muted-foreground">
+                        {record.location}
+                      </span>
                     </div>
                   )}
-                  <p className="text-sm text-muted-foreground mb-4">{record.description}</p>
-                  {record.medicalSupplies && record.medicalSupplies.length > 0 && (
-                    <div>
-                      <h4 className="font-medium mb-2">Medical Supplies Needed:</h4>
-                      <ul className="space-y-1">
-                        {record.medicalSupplies.map((supply: MedicalSupply, index: number) => (
-                          <li key={index} className="text-sm">
-                            • {supply.name} - Quantity: {supply.quantity}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
+                  <p className="text-sm text-muted-foreground mb-4">
+                    {record.description}
+                  </p>
+                  {record.medicalSupplies &&
+                    record.medicalSupplies.length > 0 && (
+                      <div>
+                        <h4 className="font-medium mb-2">
+                          Medical Supplies Needed:
+                        </h4>
+                        <ul className="space-y-1">
+                          {record.medicalSupplies.map(
+                            (supply: MedicalSupply, index: number) => (
+                              <li key={index} className="text-sm">
+                                • {supply.name} - Quantity: {supply.quantity}
+                              </li>
+                            )
+                          )}
+                        </ul>
+                      </div>
+                    )}
                 </CardContent>
               </>
             )}
@@ -786,30 +919,35 @@ function SavedEditRecords() {
 function RegisteredRecords() {
   const userRole = useRole();
   const { signOut } = useClerk();
-  const [serverVerifiedRole, setServerVerifiedRole] = useState<string | undefined>(undefined);
+  const [serverVerifiedRole, setServerVerifiedRole] = useState<
+    string | undefined
+  >(undefined);
   const [isVerifying, setIsVerifying] = useState(true);
-  
+
   // Verify role server-side first
   useEffect(() => {
     fetch("/api/verify-role")
-      .then(res => res.json())
-      .then(data => {
+      .then((res) => res.json())
+      .then((data) => {
         if (data.hasPermission) {
           setServerVerifiedRole(data.role);
-          console.log("Server verified role for registered records query:", data.role);
+          console.log(
+            "Server verified role for registered records query:",
+            data.role
+          );
         }
         setIsVerifying(false);
       })
-      .catch(err => {
+      .catch((err) => {
         console.warn("Could not verify role:", err);
         setIsVerifying(false);
       });
   }, []);
-  
+
   // Pass server-verified role to query (skip query until we verify role)
   const records = useQuery(
     api.reports.getRegisteredRecords,
-    isVerifying ? "skip" : (serverVerifiedRole ? { serverVerifiedRole } : {})
+    isVerifying ? "skip" : serverVerifiedRole ? { serverVerifiedRole } : {}
   );
 
   if (records === undefined) {
@@ -861,7 +999,7 @@ function RegisteredRecords() {
       <p className="text-muted-foreground">
         View all registered disease records.
       </p>
-      
+
       <div className="space-y-4">
         {records.map((record) => (
           <Card key={record._id}>
@@ -870,7 +1008,10 @@ function RegisteredRecords() {
                 <div>
                   <CardTitle>{record.diseaseName}</CardTitle>
                   <CardDescription>
-                    Registered: {new Date(record.updatedAt || record.createdAt).toLocaleDateString()}
+                    Registered:{" "}
+                    {new Date(
+                      record.updatedAt || record.createdAt
+                    ).toLocaleDateString()}
                   </CardDescription>
                 </div>
                 <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-md">
@@ -889,19 +1030,25 @@ function RegisteredRecords() {
               {record.location && (
                 <div className="mb-3">
                   <span className="text-sm font-medium">Location: </span>
-                  <span className="text-sm text-muted-foreground">{record.location}</span>
+                  <span className="text-sm text-muted-foreground">
+                    {record.location}
+                  </span>
                 </div>
               )}
-              <p className="text-sm text-muted-foreground mb-4">{record.description}</p>
+              <p className="text-sm text-muted-foreground mb-4">
+                {record.description}
+              </p>
               {record.medicalSupplies && record.medicalSupplies.length > 0 && (
                 <div>
                   <h4 className="font-medium mb-2">Medical Supplies Needed:</h4>
                   <ul className="space-y-1">
-                    {record.medicalSupplies.map((supply: MedicalSupply, index: number) => (
-                      <li key={index} className="text-sm">
-                        • {supply.name} - Quantity: {supply.quantity}
-                      </li>
-                    ))}
+                    {record.medicalSupplies.map(
+                      (supply: MedicalSupply, index: number) => (
+                        <li key={index} className="text-sm">
+                          • {supply.name} - Quantity: {supply.quantity}
+                        </li>
+                      )
+                    )}
                   </ul>
                 </div>
               )}
@@ -914,13 +1061,51 @@ function RegisteredRecords() {
 }
 
 export function Dashboard({ mode }: { mode: "admin" | "asha" | "citizen" }) {
-  const data = useQuery(api.reports.getVillageSummary, { village: "Bangalore" });
-  const { user } = useUser();
+  const { user, isLoaded } = useUser();
+  const { signOut } = useClerk();
 
-  if (!data) return <MedicalLoader message="Loading health data..." size="lg" className="min-h-[400px]" />;
+  // Move hooks to top level - always call hooks in the same order
+  // Use "skip" to conditionally skip queries when not needed
+  const data = useQuery(
+    api.reports.getVillageSummary,
+    mode !== "asha" && isLoaded && user ? { village: "Bangalore" } : "skip"
+  );
+  const allRecords = useQuery(
+    api.reports.getDiseaseRecords,
+    mode === "asha" && isLoaded && user
+      ? { serverVerifiedRole: "asha" }
+      : "skip"
+  );
+  const registeredRecords = useQuery(
+    api.reports.getRegisteredRecords,
+    mode === "asha" && isLoaded && user
+      ? { serverVerifiedRole: "asha" }
+      : "skip"
+  );
+
+  // Show loader while user is loading or data is loading (only for citizen/admin modes)
+  if (!isLoaded || (mode !== "asha" && data === undefined)) {
+    return (
+      <MedicalLoader
+        message="Loading health data..."
+        size="lg"
+        className="min-h-[400px]"
+      />
+    );
+  }
 
   // Citizen view
   if (mode === "citizen") {
+    if (!data || data.type !== "summary") {
+      return (
+        <MedicalLoader
+          message="Loading health data..."
+          size="lg"
+          className="min-h-[400px]"
+        />
+      );
+    }
+
     return (
       <div className="p-6 space-y-4">
         <h2 className="text-xl font-semibold">Citizen View</h2>
@@ -937,87 +1122,175 @@ export function Dashboard({ mode }: { mode: "admin" | "asha" | "citizen" }) {
     );
   }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   // ASHA view
   if (mode === "asha") {
-    const userName = user?.fullName || 
-                     (user?.firstName && user?.lastName 
-                       ? `${user.firstName} ${user.lastName}` 
-                       : user?.firstName || 
-                       user?.primaryEmailAddress?.emailAddress || 
-                       "User");
-    
+    const userName =
+      user?.fullName ||
+      (user?.firstName && user?.lastName
+        ? `${user.firstName} ${user.lastName}`
+        : user?.firstName || user?.primaryEmailAddress?.emailAddress || "User");
+
+    // Calculate record counts for stats (hooks are already called at top level)
+    const draftCount = Array.isArray(allRecords)
+      ? allRecords.filter((r: any) => r.status !== "registered").length
+      : 0;
+    const registeredCount = Array.isArray(registeredRecords)
+      ? registeredRecords.length
+      : 0;
+
     return (
-      <div className="p-6 space-y-4">
-        <h2 className="text-xl font-semibold">ASHA Dashboard 🩺</h2>
-        <div className="text-lg font-medium text-gray-700">
-          Welcome, {userName}!
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+        {/* Beautiful Header */}
+        <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white shadow-lg">
+          <div className="p-6 lg:p-8">
+            <div className="max-w-7xl mx-auto">
+              <div className="flex items-center justify-between flex-wrap gap-4">
+                <div>
+                  <h1 className="text-3xl lg:text-4xl font-bold flex items-center gap-3">
+                    <span>Asha Dashboard 🩺</span>
+                  </h1>
+                </div>
+                <div className="flex items-center gap-4">
+                  <p className="text-blue-100 text-lg font-medium">
+                    Welcome back,{" "}
+                    <span className="text-white font-semibold">{userName}</span>
+                    !
+                  </p>
+                  <div className="flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full border border-white/30">
+                    <span className="text-sm font-medium">Active Worker</span>
+                    <div className="w-2 h-2 bg-green-300 rounded-full animate-pulse"></div>
+                  </div>
+                  <Button
+  onClick={() => signOut({ redirectUrl: window.location.origin })}
+  className="text-white font-semibold rounded-full px-5 py-2
+             bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500
+             hover:from-red-600 hover:via-red-500 hover:to-red-400
+             shadow-md hover:shadow-lg hover:shadow-red-500/40
+             transition-all duration-300 active:scale-95"
+>
+  Logout
+</Button>
+
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-        
-        <Tabs defaultValue="create" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="create">Create</TabsTrigger>
-            <TabsTrigger value="saved">Saved/Edit</TabsTrigger>
-            <TabsTrigger value="registered">Registered</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="create" className="mt-4">
-            <CreateRecordForm />
-          </TabsContent>
-          
-          <TabsContent value="saved" className="mt-4">
-            <SavedEditRecords />
-          </TabsContent>
-          
-          <TabsContent value="registered" className="mt-4">
-            <RegisteredRecords />
-          </TabsContent>
-        </Tabs>
+
+        {/* Statistics Cards */}
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 mt-8 relative z-10">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <Card className="bg-white/90 backdrop-blur-sm border-2 border-blue-200 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium text-gray-600 uppercase tracking-wide">
+                  Draft Records
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                    {draftCount}
+                  </span>
+                  <span className="text-gray-500 text-sm">records</span>
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  Pending registration
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white/90 backdrop-blur-sm border-2 border-green-200 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium text-gray-600 uppercase tracking-wide">
+                  Registered Records
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+                    {registeredCount}
+                  </span>
+                  <span className="text-gray-500 text-sm">records</span>
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  Successfully registered
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white/90 backdrop-blur-sm border-2 border-purple-200 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium text-gray-600 uppercase tracking-wide">
+                  Total Activity
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                    {draftCount + registeredCount}
+                  </span>
+                  <span className="text-gray-500 text-sm">total</span>
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  All records combined
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Main Content Area */}
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-2xl border border-gray-200/50 p-6 lg:p-8 mb-8">
+            <Tabs defaultValue="create" className="w-full">
+              <TabsList className="grid w-full grid-cols-3 bg-gray-100/80 p-1 rounded-lg mb-6">
+                <TabsTrigger
+                  value="create"
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-200 font-semibold"
+                >
+                  ✏️ Create Record
+                </TabsTrigger>
+                <TabsTrigger
+                  value="saved"
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-200 font-semibold"
+                >
+                  📝 Saved/Edit
+                </TabsTrigger>
+                <TabsTrigger
+                  value="registered"
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-200 font-semibold"
+                >
+                  ✅ Registered
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="create" className="mt-6">
+                <CreateRecordForm />
+              </TabsContent>
+
+              <TabsContent value="saved" className="mt-6">
+                <SavedEditRecords />
+              </TabsContent>
+
+              <TabsContent value="registered" className="mt-6">
+                <RegisteredRecords />
+              </TabsContent>
+            </Tabs>
+          </div>
+        </div>
       </div>
     );
   }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   // Admin view
+  if (!data || data.type !== "detailed") {
+    return (
+      <MedicalLoader
+        message="Loading health data..."
+        size="lg"
+        className="min-h-[400px]"
+      />
+    );
+  }
+
   return (
     <div className="p-6 space-y-4">
       <h2 className="text-xl font-semibold">Admin Control Panel ⚙️</h2>
