@@ -14,4 +14,18 @@ export default defineSchema({
     village: v.string(),
     date: v.string(),
   }),
+  diseaseRecords: defineTable({
+    createdBy: v.string(),
+    createdByRole: v.string(),
+    diseaseName: v.string(),
+    imageUrl: v.optional(v.string()),
+    description: v.string(),
+    medicalSupplies: v.array(v.object({
+      name: v.string(),
+      quantity: v.number(),
+    })),
+    status: v.union(v.literal("draft"), v.literal("registered")),
+    createdAt: v.string(),
+    updatedAt: v.optional(v.string()),
+  }),
 });

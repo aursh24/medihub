@@ -4,6 +4,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
+import { MedicalPageLoader } from "@/components/ui/medical-loader";
 
 export default function AfterSignIn() {
   const search = useSearchParams();
@@ -56,7 +57,15 @@ export default function AfterSignIn() {
     })();
   }, [isSignedIn, user, roleFromUrl, invite, router]);
 
-  if (loading) return <div style={{ padding: 24 }}>Signing you in & assigning role…</div>;
-  if (err) return <div style={{ padding: 24 }}>Error: {err}</div>;
-  return <div style={{ padding: 24 }}>Done — redirecting…</div>;
+  if (loading) return <MedicalPageLoader message="Signing you in & assigning role…" />;
+  if (err) return (
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-red-50 to-white">
+      <div className="text-center space-y-4 p-8">
+        <div className="text-6xl">⚠️</div>
+        <h2 className="text-2xl font-semibold text-red-600">Error</h2>
+        <p className="text-gray-700">{err}</p>
+      </div>
+    </div>
+  );
+  return <MedicalPageLoader message="Done — redirecting…" />;
 }
