@@ -9,6 +9,9 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { MedicalLoader } from "@/components/ui/medical-loader";
+import { useRole } from "@/lib/useRole";
+import { ROLES } from "@/lib/roles";
+import { useClerk } from "@clerk/nextjs";
 
 interface MedicalSupply {
   name: string;
@@ -18,6 +21,7 @@ interface MedicalSupply {
 function CreateRecordForm() {
   const [diseaseName, setDiseaseName] = useState("");
   const [description, setDescription] = useState("");
+  const [location, setLocation] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [medicalSupplies, setMedicalSupplies] = useState<MedicalSupply[]>([]);
@@ -25,8 +29,33 @@ function CreateRecordForm() {
   const [quantityInput, setQuantityInput] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [showDebug, setShowDebug] = useState(false);
 
   const createRecord = useMutation(api.reports.createDiseaseRecord);
+  const userRole = useRole();
+  const convexRoleCheck = useQuery(api.reports.checkUserRole);
+  const { signOut } = useClerk();
+  
+  const handleSetRole = async () => {
+    try {
+      const response = await fetch("/api/set-role", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: "asha", invite: "ASHA2025" }),
+      });
+      const data = await response.json();
+      if (data.ok) {
+        setSaveStatus({ 
+          type: "success", 
+          message: "Role set successfully! IMPORTANT: Please sign out and sign back in to refresh your session token, then try creating a record again." 
+        });
+      } else {
+        setSaveStatus({ type: "error", message: data.error || "Failed to set role" });
+      }
+    } catch (error) {
+      setSaveStatus({ type: "error", message: "Failed to set role. Please try visiting /after-signin?role=asha&invite=ASHA2025" });
+    }
+  };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -66,35 +95,136 @@ function CreateRecordForm() {
     setSaveStatus(null);
 
     try {
+      // First, verify role server-side to work around JWT token caching
+      let serverVerifiedRole: string | undefined;
+      try {
+        const verifyResponse = await fetch("/api/verify-role");
+        if (verifyResponse.ok) {
+          const verifyData = await verifyResponse.json();
+          if (verifyData.hasPermission) {
+            serverVerifiedRole = verifyData.role;
+            console.log("Server verified role:", serverVerifiedRole);
+          } else {
+            console.warn("Server verification failed - role:", verifyData.role);
+          }
+        }
+      } catch (verifyError) {
+        console.warn("Could not verify role server-side:", verifyError);
+        // Continue anyway, will rely on JWT token
+      }
+
       await createRecord({
         diseaseName,
         description,
+        location: location.trim() || undefined,
         imageUrl: imagePreview || undefined,
         medicalSupplies,
+        serverVerifiedRole, // Pass server-verified role as workaround
       });
 
       // Reset form
       setDiseaseName("");
       setDescription("");
+      setLocation("");
       setImageFile(null);
       setImagePreview(null);
       setMedicalSupplies([]);
       setSupplyInput("");
       setQuantityInput("");
       setSaveStatus({ type: "success", message: "Record saved successfully! Check the Saved/Edit tab to view it." });
+      // Clear success message after 5 seconds
+      setTimeout(() => setSaveStatus(null), 5000);
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to save record";
       setSaveStatus({ 
         type: "error", 
-        message: error instanceof Error ? error.message : "Failed to save record" 
+        message: errorMessage
       });
+      console.error("Error creating record:", error);
     } finally {
       setIsSaving(false);
     }
   };
 
+  // Check if user has the correct role
+  const hasPermission = userRole === ROLES.ASHA || userRole === ROLES.ADMIN;
+
   return (
     <div className="space-y-6">
-      <h3 className="text-lg font-semibold">Create New Disease Record</h3>
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold">Create New Disease Record</h3>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => setShowDebug(!showDebug)}
+          className="text-xs"
+        >
+          {showDebug ? "Hide" : "Show"} Debug Info
+        </Button>
+      </div>
+
+      {showDebug && convexRoleCheck && (
+        <div className="p-4 bg-blue-50 border border-blue-200 rounded-md text-xs">
+          <p className="font-semibold mb-2">🔍 Debug Information:</p>
+          <div className="space-y-1">
+            <p><strong>Client-side role (from Clerk):</strong> {userRole}</p>
+            <p><strong>Convex sees role:</strong> {convexRoleCheck.role || "Unknown"}</p>
+            <p><strong>Convex has permission:</strong> {convexRoleCheck.hasPermission ? "✅ Yes" : "❌ No"}</p>
+            <details className="mt-2">
+              <summary className="cursor-pointer font-medium">View Full Metadata</summary>
+              <pre className="mt-2 p-2 bg-white rounded text-xs overflow-auto max-h-40">
+                {JSON.stringify(convexRoleCheck, null, 2)}
+              </pre>
+            </details>
+          </div>
+        </div>
+      )}
+      
+      {!hasPermission && (
+        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+          <p className="text-sm text-yellow-800 font-medium mb-2">
+            ⚠️ Role Permission Issue
+          </p>
+          <p className="text-sm text-yellow-700 mb-2">
+            Your current role is: <strong>"{userRole}"</strong>
+          </p>
+          <p className="text-sm text-yellow-700 mb-3">
+            To create disease records, you need to have the <strong>ASHA</strong> or <strong>Admin</strong> role set in your Clerk account.
+          </p>
+          <div className="text-sm text-yellow-700 space-y-2">
+            <p className="font-medium">To set your role:</p>
+            <Button
+              type="button"
+              onClick={handleSetRole}
+              variant="outline"
+              size="sm"
+              className="w-full"
+            >
+              Set ASHA Role (Auto)
+            </Button>
+            <div className="mt-2 p-2 bg-yellow-100 rounded text-xs space-y-2">
+              <p className="font-semibold mb-1">⚠️ Important:</p>
+              <p>After setting your role, you <strong>must sign out and sign back in</strong> for the changes to take effect. The authentication token needs to be refreshed.</p>
+              <Button
+                type="button"
+                onClick={() => {
+                  signOut({ redirectUrl: window.location.origin + "/asha" });
+                }}
+                variant="outline"
+                size="sm"
+                className="w-full mt-2"
+              >
+                Sign Out to Refresh Session
+              </Button>
+            </div>
+            <p className="text-xs text-yellow-600 mt-2">Or manually visit:</p>
+            <code className="block bg-yellow-100 px-2 py-1 rounded text-xs break-all">
+              /after-signin?role=asha&invite=ASHA2025
+            </code>
+          </div>
+        </div>
+      )}
       
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Disease Name */}
@@ -154,6 +284,18 @@ function CreateRecordForm() {
             placeholder="Enter description about the disease"
             rows={4}
             className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-base shadow-xs placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:border-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+          />
+        </div>
+
+        {/* Location */}
+        <div className="space-y-2">
+          <Label htmlFor="location">Location</Label>
+          <Input
+            id="location"
+            type="text"
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            placeholder="Enter location (e.g., Village, Street, Area)"
           />
         </div>
 
@@ -239,7 +381,7 @@ function CreateRecordForm() {
         )}
 
         {/* Submit Button */}
-        <Button type="submit" disabled={isSaving} className="w-full">
+        <Button type="submit" disabled={isSaving || !hasPermission} className="w-full">
           {isSaving ? "Saving..." : "Save Record"}
         </Button>
       </form>
@@ -251,10 +393,13 @@ function SavedEditRecords() {
   const records = useQuery(api.reports.getDiseaseRecords);
   const updateRecord = useMutation(api.reports.updateDiseaseRecord);
   const registerRecord = useMutation(api.reports.registerDiseaseRecord);
+  const userRole = useRole();
+  const { signOut } = useClerk();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<{
     diseaseName: string;
     description: string;
+    location: string | null;
     imageUrl: string | null;
     medicalSupplies: MedicalSupply[];
   } | null>(null);
@@ -269,6 +414,7 @@ function SavedEditRecords() {
     setEditForm({
       diseaseName: record.diseaseName,
       description: record.description,
+      location: record.location || null,
       imageUrl: record.imageUrl || null,
       medicalSupplies: record.medicalSupplies || [],
     });
@@ -329,12 +475,15 @@ function SavedEditRecords() {
         id: editingId as any,
         diseaseName: editForm.diseaseName,
         description: editForm.description,
+        location: editForm.location?.trim() || undefined,
         imageUrl: editForm.imageUrl || undefined,
         medicalSupplies: editForm.medicalSupplies,
       });
       handleCancelEdit();
+      // Success - the record will automatically refresh via Convex query
     } catch (error) {
       console.error("Failed to update record:", error);
+      alert(error instanceof Error ? error.message : "Failed to update record");
     } finally {
       setIsSaving(false);
     }
@@ -344,15 +493,53 @@ function SavedEditRecords() {
     setIsRegistering(id);
     try {
       await registerRecord({ id: id as any });
+      // Success - the record will be removed from draft list and appear in registered tab
+      // Convex automatically refreshes queries after mutations
     } catch (error) {
       console.error("Failed to register record:", error);
+      alert(error instanceof Error ? error.message : "Failed to register record");
+      setIsRegistering(null);
     } finally {
       setIsRegistering(null);
     }
   };
 
+  // Handle loading state
   if (records === undefined) {
     return <MedicalLoader message="Loading your records..." size="md" />;
+  }
+
+  // Handle error state (when query fails due to permission)
+  // Note: Convex queries throw errors that React Query catches
+  // We need to check if records is an error or handle it differently
+  // For now, if we get here and records is not an array, show error message
+  if (!Array.isArray(records)) {
+    return (
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold">Saved/Edit Records</h3>
+        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+          <p className="text-sm text-yellow-800 font-medium mb-2">
+            ⚠️ Session Token Issue
+          </p>
+          <p className="text-sm text-yellow-700 mb-2">
+            Your current role is: <strong>"{userRole}"</strong>
+          </p>
+          <p className="text-sm text-yellow-700 mb-3">
+            It appears your session token hasn't been updated with your new role. Please sign out and sign back in to refresh your session.
+          </p>
+          <Button
+            onClick={() => {
+              signOut({ redirectUrl: window.location.origin + "/asha" });
+            }}
+            variant="outline"
+            size="sm"
+            className="w-full"
+          >
+            Sign Out to Refresh Session
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   const draftRecords = records.filter(r => r.status === "draft");
@@ -410,6 +597,15 @@ function SavedEditRecords() {
                       required
                       rows={4}
                       className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-base shadow-xs placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:border-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Location</Label>
+                    <Input
+                      value={editForm?.location || ""}
+                      onChange={(e) => setEditForm({ ...editForm!, location: e.target.value })}
+                      placeholder="Enter location (e.g., Village, Street, Area)"
                     />
                   </div>
 
@@ -482,8 +678,9 @@ function SavedEditRecords() {
                         size="sm"
                         onClick={() => handleRegister(record._id)}
                         disabled={isRegistering === record._id}
+                        variant="default"
                       >
-                        {isRegistering === record._id ? "Registering..." : "Register"}
+                        {isRegistering === record._id ? "Publishing..." : "Publish"}
                       </Button>
                     </div>
                   </div>
@@ -495,6 +692,12 @@ function SavedEditRecords() {
                       alt={record.diseaseName}
                       className="w-full max-w-md h-48 object-cover rounded-lg border mb-4"
                     />
+                  )}
+                  {record.location && (
+                    <div className="mb-3">
+                      <span className="text-sm font-medium">Location: </span>
+                      <span className="text-sm text-muted-foreground">{record.location}</span>
+                    </div>
                   )}
                   <p className="text-sm text-muted-foreground mb-4">{record.description}</p>
                   {record.medicalSupplies && record.medicalSupplies.length > 0 && (
@@ -521,9 +724,41 @@ function SavedEditRecords() {
 
 function RegisteredRecords() {
   const records = useQuery(api.reports.getRegisteredRecords);
+  const userRole = useRole();
+  const { signOut } = useClerk();
 
   if (records === undefined) {
     return <MedicalLoader message="Loading registered records..." size="md" />;
+  }
+
+  // Handle error state - if query failed due to permission, records won't be an array
+  if (!Array.isArray(records)) {
+    return (
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold">Registered Records</h3>
+        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+          <p className="text-sm text-yellow-800 font-medium mb-2">
+            ⚠️ Session Token Issue
+          </p>
+          <p className="text-sm text-yellow-700 mb-2">
+            Your current role is: <strong>"{userRole}"</strong>
+          </p>
+          <p className="text-sm text-yellow-700 mb-3">
+            Please sign out and sign back in to refresh your session token.
+          </p>
+          <Button
+            onClick={() => {
+              signOut({ redirectUrl: window.location.origin + "/asha" });
+            }}
+            variant="outline"
+            size="sm"
+            className="w-full"
+          >
+            Sign Out to Refresh Session
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   if (records.length === 0) {
@@ -565,6 +800,12 @@ function RegisteredRecords() {
                   alt={record.diseaseName}
                   className="w-full max-w-md h-48 object-cover rounded-lg border mb-4"
                 />
+              )}
+              {record.location && (
+                <div className="mb-3">
+                  <span className="text-sm font-medium">Location: </span>
+                  <span className="text-sm text-muted-foreground">{record.location}</span>
+                </div>
               )}
               <p className="text-sm text-muted-foreground mb-4">{record.description}</p>
               {record.medicalSupplies && record.medicalSupplies.length > 0 && (
