@@ -1,24 +1,7 @@
-services:
-  - type: web
-    name: medihub
-    env: docker
-    dockerfilePath: ./Dockerfile
-    dockerContext: .
-    plan: starter
-    region: oregon
-    envVars:
-      - key: NODE_ENV
-        value: production
-      - key: NEXT_PUBLIC_CONVEX_URL
-        sync: false
-      - key: NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
-        sync: false
-      - key: CLERK_SECRET_KEY
-        sync: false
-      - key: CLERK_FRONTEND_API_URL
-        sync: false
-      - key: ASHA_INVITE_CODE
-        value: ASHA2025
-      - key: ADMIN_INVITE_CODE
-        value: ADMIN2025
+# This file is for reference only.
+# The backend service uses backend/render.yaml
+# The frontend is deployed on Vercel
+# 
+# If you want to deploy everything on Render, use the original configuration.
+# For split deployment (backend on Render, frontend on Vercel), see DEPLOYMENT_GUIDE_SPLIT.md
 

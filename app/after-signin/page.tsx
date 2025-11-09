@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { MedicalPageLoader } from "@/components/ui/medical-loader";
+import { getApiUrl } from "@/lib/api-config";
 
 export default function AfterSignIn() {
   const search = useSearchParams();
@@ -23,11 +24,11 @@ export default function AfterSignIn() {
         const currentRole = (user?.publicMetadata?.role as string | undefined) || null;
 
         // If no role assigned and a role was requested via URL, try to set it
-        if (!currentRole && roleFromUrl) {
-          const res = await fetch("/api/set-role", {
+        if (!currentRole && roleFromUrl && user?.id) {
+          const res = await fetch(getApiUrl("/api/set-role"), {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ role: roleFromUrl, invite }),
+            body: JSON.stringify({ role: roleFromUrl, invite, userId: user.id }),
           });
           const json = await res.json();
           if (!res.ok || !json.ok) {

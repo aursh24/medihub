@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: medihub-backend
+    env: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: starter
+    region: oregon
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: CLERK_SECRET_KEY
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: ASHA_INVITE_CODE
+        value: ASHA2025
+      - key: ADMIN_INVITE_CODE
+        value: ADMIN2025
+      - key: PORT
+        value: "3001"
+

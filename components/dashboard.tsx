@@ -25,6 +25,7 @@ import { MedicalLoader } from "@/components/ui/medical-loader";
 import { useRole } from "@/lib/useRole";
 import { ROLES } from "@/lib/roles";
 import { useClerk } from "@clerk/nextjs";
+import { getApiUrl } from "@/lib/api-config";
 
 interface MedicalSupply {
   name: string;
@@ -51,13 +52,21 @@ function CreateRecordForm() {
   const userRole = useRole();
   const convexRoleCheck = useQuery(api.reports.checkUserRole);
   const { signOut } = useClerk();
+  const { user } = useUser();
 
   const handleSetRole = async () => {
+    if (!user?.id) {
+      setSaveStatus({
+        type: "error",
+        message: "User not authenticated",
+      });
+      return;
+    }
     try {
-      const response = await fetch("/api/set-role", {
+      const response = await fetch(getApiUrl("/api/set-role"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role: "asha", invite: "ASHA2025" }),
+        body: JSON.stringify({ role: "asha", invite: "ASHA2025", userId: user.id }),
       });
       const data = await response.json();
       if (data.ok) {
@@ -130,20 +139,22 @@ function CreateRecordForm() {
     try {
       // First, verify role server-side to work around JWT token caching
       let serverVerifiedRole: string | undefined;
-      try {
-        const verifyResponse = await fetch("/api/verify-role");
-        if (verifyResponse.ok) {
-          const verifyData = await verifyResponse.json();
-          if (verifyData.hasPermission) {
-            serverVerifiedRole = verifyData.role;
-            console.log("Server verified role:", serverVerifiedRole);
-          } else {
-            console.warn("Server verification failed - role:", verifyData.role);
+      if (user?.id) {
+        try {
+          const verifyResponse = await fetch(getApiUrl(`/api/verify-role?userId=${user.id}`));
+          if (verifyResponse.ok) {
+            const verifyData = await verifyResponse.json();
+            if (verifyData.hasPermission) {
+              serverVerifiedRole = verifyData.role;
+              console.log("Server verified role:", serverVerifiedRole);
+            } else {
+              console.warn("Server verification failed - role:", verifyData.role);
+            }
           }
+        } catch (verifyError) {
+          console.warn("Could not verify role server-side:", verifyError);
+          // Continue anyway, will rely on JWT token
         }
-      } catch (verifyError) {
-        console.warn("Could not verify role server-side:", verifyError);
-        // Continue anyway, will rely on JWT token
       }
 
       await createRecord({
@@ -485,6 +496,7 @@ function CreateRecordForm() {
 function SavedEditRecords() {
   const userRole = useRole();
   const { signOut } = useClerk();
+  const { user } = useUser();
   const [serverVerifiedRole, setServerVerifiedRole] = useState<
     string | undefined
   >(undefined);
@@ -492,7 +504,11 @@ function SavedEditRecords() {
 
   // Verify role server-side first
   useEffect(() => {
-    fetch("/api/verify-role")
+    if (!user?.id) {
+      setIsVerifying(false);
+      return;
+    }
+    fetch(getApiUrl(`/api/verify-role?userId=${user.id}`))
       .then((res) => res.json())
       .then((data) => {
         if (data.hasPermission) {
@@ -505,7 +521,7 @@ function SavedEditRecords() {
         console.warn("Could not verify role:", err);
         setIsVerifying(false);
       });
-  }, []);
+  }, [user?.id]);
 
   // Pass server-verified role to query (skip query until we verify role)
   const records = useQuery(
@@ -596,9 +612,9 @@ function SavedEditRecords() {
     try {
       // Verify role server-side first
       let verifiedRole: string | undefined = serverVerifiedRole;
-      if (!verifiedRole) {
+      if (!verifiedRole && user?.id) {
         try {
-          const verifyResponse = await fetch("/api/verify-role");
+          const verifyResponse = await fetch(getApiUrl(`/api/verify-role?userId=${user.id}`));
           if (verifyResponse.ok) {
             const verifyData = await verifyResponse.json();
             if (verifyData.hasPermission) {
@@ -634,9 +650,9 @@ function SavedEditRecords() {
     try {
       // Verify role server-side first
       let verifiedRole: string | undefined = serverVerifiedRole;
-      if (!verifiedRole) {
+      if (!verifiedRole && user?.id) {
         try {
-          const verifyResponse = await fetch("/api/verify-role");
+          const verifyResponse = await fetch(getApiUrl(`/api/verify-role?userId=${user.id}`));
           if (verifyResponse.ok) {
             const verifyData = await verifyResponse.json();
             if (verifyData.hasPermission) {
@@ -926,6 +942,7 @@ function SavedEditRecords() {
 function RegisteredRecords() {
   const userRole = useRole();
   const { signOut } = useClerk();
+  const { user } = useUser();
   const [serverVerifiedRole, setServerVerifiedRole] = useState<
     string | undefined
   >(undefined);
@@ -933,7 +950,11 @@ function RegisteredRecords() {
 
   // Verify role server-side first
   useEffect(() => {
-    fetch("/api/verify-role")
+    if (!user?.id) {
+      setIsVerifying(false);
+      return;
+    }
+    fetch(getApiUrl(`/api/verify-role?userId=${user.id}`))
       .then((res) => res.json())
       .then((data) => {
         if (data.hasPermission) {
@@ -949,7 +970,7 @@ function RegisteredRecords() {
         console.warn("Could not verify role:", err);
         setIsVerifying(false);
       });
-  }, []);
+  }, [user?.id]);
 
   // Pass server-verified role to query (skip query until we verify role)
   const records = useQuery(
@@ -1078,7 +1099,11 @@ function AdminInterface() {
 
   // Verify role server-side first
   useEffect(() => {
-    fetch("/api/verify-role")
+    if (!user?.id) {
+      setIsVerifying(false);
+      return;
+    }
+    fetch(getApiUrl(`/api/verify-role?userId=${user.id}`))
       .then((res) => res.json())
       .then((data) => {
         if (data.hasPermission) {
@@ -1090,7 +1115,7 @@ function AdminInterface() {
         console.warn("Could not verify role:", err);
         setIsVerifying(false);
       });
-  }, []);
+  }, [user?.id]);
 
   // Fetch all registered records
   const records = useQuery(
