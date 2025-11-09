@@ -17,8 +17,16 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Set environment variables for build
+# Accept build arguments (Render will pass these as environment variables)
+ARG NEXT_PUBLIC_CONVEX_URL
+ARG NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+ARG CLERK_FRONTEND_API_URL
+
+# Set environment variables for build (NEXT_PUBLIC_ vars are needed at build time)
 ENV NEXT_TELEMETRY_DISABLED 1
+ENV NEXT_PUBLIC_CONVEX_URL=${NEXT_PUBLIC_CONVEX_URL}
+ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+ENV CLERK_FRONTEND_API_URL=${CLERK_FRONTEND_API_URL}
 
 # Build the application
 RUN npm run build
