@@ -29,6 +29,7 @@ ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
 ENV CLERK_FRONTEND_API_URL=${CLERK_FRONTEND_API_URL}
 
 # Build the application
+RUN npx convex codegen
 RUN npm run build
 
 # Production image, copy all the files and run next
