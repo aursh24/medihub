@@ -114,7 +114,7 @@ export default function LandingPage() {
                 className="text-5xl lg:text-6xl font-extrabold leading-tight"
               >
                 <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-                  MediHub 🩺
+                  Swasth-Net 🩺
                 </span>
               </motion.h1>
               
